@@ -85,6 +85,15 @@ the original report, and the limitations of this comparison.
 
 ## Start here
 
+### Parts links
+
+The following Amazon links are affiliate links. I may receive a commission at
+no additional cost to you if you make a purchase through them.
+
+- [Noctua NF-A14 PWM computer fan](https://link.amazon/B0ex7c04A)
+- [Raspberry Pi Pico W](https://amzn.to/4h3aFq5)
+- [12 V DC boost converter](https://amzn.to/3UTugBN)
+
 1. Read the [bill of materials](docs/bom.md) and obtain the parts.
 2. Read the complete [illustrated wiring guide](docs/wiring.html) before connecting power.
 3. Follow the [quick-start guide](docs/quick-start.md) to install the Pico firmware
