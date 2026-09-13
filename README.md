@@ -2,11 +2,12 @@
 
 An open hardware and software project for adding a temperature-controlled
 140 mm fan to an NVIDIA DGX Spark. A Raspberry Pi Pico W drives a standard
-12 V Noctua NF-A14 PWM fan, exposes a local dashboard, and accepts temperature
-telemetry from a small Linux service running on the DGX Spark.
+12 V Noctua NF-A14 PWM fan, tracks CPU/GPU temperature in a local dashboard, and accepts temperature
+telemetry from a small Linux service running on the DGX Spark. The Pico controls the fan automatically following a 
+temperature curve set in the dashboard.
 
 The name comes from the printed fan mount and arms, which wrap around the DGX
-Spark a little like a movie face hugger.
+Spark a little like a face hugger. It makes the DGX Spark not as pretty, but also about 4-5C cooler.
 
 ![Animated exploded view of the Face Hugger Fan assembly](docs/assets/face-hugger-fan-dgx-spark.gif)
 
