@@ -16,6 +16,19 @@ Spark a little like a movie face hugger.
 > internal thermal management. Disconnect power before wiring. The fan motor is
 > the only part of this design that receives 12 V.
 
+## Real build and printable parts
+
+![Assembled Face Hugger Fan mounted beside an NVIDIA DGX Spark](docs/assets/face-hugger-fan-real-build.jpg)
+
+The photograph above shows the real assembled prototype. Both printable model
+files are included in this repository:
+
+- [Download the fan body / cover STL](hardware/stl/face-hugger-fan-dgx-spark-body.stl)
+- [Download the two-arm set STL](hardware/stl/face-hugger-fan-dgx-spark-arms.stl)
+
+See the [STL notes](hardware/stl/README.md) for dimensions, triangle counts,
+checksums, scale guidance, and the current printing and assembly caveats.
+
 ## What is here
 
 - Raspberry Pi Pico W CircuitPython firmware
