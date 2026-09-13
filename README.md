@@ -8,6 +8,8 @@ telemetry from a small Linux service running on the DGX Spark.
 The name comes from the printed fan mount and arms, which wrap around the DGX
 Spark a little like a movie face hugger.
 
+![Animated exploded view of the Face Hugger Fan assembly](docs/assets/face-hugger-fan-dgx-spark.gif)
+
 > [!CAUTION]
 > This is an experimental, independently developed accessory. It is not endorsed
 > by NVIDIA, Raspberry Pi, or Noctua, and it does not replace the DGX Spark's
@@ -23,7 +25,7 @@ Spark a little like a movie face hugger.
 - Bill of materials and fan specifications
 - A quick-start installation guide
 - Thermal comparison results with and without the external fan
-- A place for the printable cover and mounting-arm STL files
+- Printable body and mounting-arm STL files
 - Desktop tests and continuous integration
 
 ## How it works
@@ -42,6 +44,15 @@ flowchart LR
 The Pico starts at full fan speed and returns to full speed if commands expire.
 The DGX service reads CPU/GPU temperatures, evaluates the configured stepped fan
 curve, and renews the selected PWM command every five seconds by default.
+
+## Dashboard
+
+The Pico hosts a responsive local dashboard for live CPU/GPU temperature,
+estimated fan speed, PWM output, fan-curve editing, and 24-hour history. The view
+below uses synthetic readings from the repository's test fixture; it contains no
+live credentials or private network information.
+
+![DGX Spark external fan controller dashboard](docs/assets/dashboard.png)
 
 ## Measured result
 
@@ -68,9 +79,9 @@ the original report, and the limitations of this comparison.
 5. Read the [detailed software reference](docs/software-reference.md) for API,
    dashboard, fan-curve, failure-mode, and test documentation.
 
-The first public version intentionally does not include the STL geometry yet.
-See [hardware/stl/README.md](hardware/stl/README.md) for the filenames and metadata
-to add when those files are released.
+The printable body and two-arm set are available in [hardware/stl/](hardware/stl/).
+STL files do not encode units, so read the model notes and verify dimensions in
+your slicer before printing.
 
 ## Repository map
 
@@ -82,7 +93,7 @@ to add when those files are released.
 | `lib/` | CircuitPython HTTP server dependency and its license |
 | `dgx/` | DGX Spark telemetry script, environment template, and systemd service |
 | `docs/` | BOM, wiring, installation, specifications, and test results |
-| `hardware/stl/` | Reserved for the printable cover and arms |
+| `hardware/stl/` | Printable body and two-arm STL models, with model metadata |
 | `tests/` | Desktop unit and integration tests |
 
 ## Project status
