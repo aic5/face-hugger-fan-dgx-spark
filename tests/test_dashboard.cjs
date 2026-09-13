@@ -1,0 +1,177 @@
+// Desktop browser verification against the real firmware HTTP handlers.
+const {chromium} = require("playwright");
+const {spawn} = require("node:child_process");
+const path = require("node:path");
+const fs = require("node:fs");
+const assert = require("node:assert/strict");
+const child = spawn(process.env.FAN_TEST_PYTHON || "python3", [path.join(__dirname,"serve_dashboard.py")]);
+let browser;
+(async()=>{
+  const url = await new Promise((resolve,reject)=>{
+    const timeout=setTimeout(()=>reject(new Error("fixture startup timed out")),10000);
+    child.stdout.once("data",data=>{clearTimeout(timeout);resolve(data.toString().trim());});
+    child.stderr.on("data",data=>process.stderr.write(data));
+    child.once("exit",code=>{clearTimeout(timeout);reject(new Error("fixture exit "+code));});
+  });
+  browser=await chromium.launch({channel:"chrome",headless:true});
+  const page=await browser.newPage({viewport:{width:1280,height:1100}});
+  const errors=[];page.on("pageerror",error=>errors.push(error.message));
+  await page.goto(url);
+  await page.waitForURL("**/login");
+  await page.locator("#username").fill("dashboard-user");
+  await page.locator("#password").fill("dashboard-password");
+  await page.locator("#login-submit").click();
+  await page.waitForURL(url+"/");
+  await page.waitForFunction(()=>document.getElementById("history-state").textContent.includes("1,440 / 1,440"));
+  await page.waitForFunction(()=>document.getElementById("curve-steps").children.length===3);
+  assert.equal(await page.locator("#off").isDisabled(),true);
+  assert.equal(await page.locator("#curve-toggle").textContent(),"Pause automatic control");
+  await page.locator("#curve-toggle").click();
+  await page.waitForFunction(()=>document.getElementById("curve-state").textContent.includes("paused"));
+  assert.equal(await page.locator("#off").isDisabled(),false);
+  await page.locator("#off_temp_c").fill("80");
+  assert.equal(await page.locator("#curve-apply").isDisabled(),true);
+  await page.locator("#off_temp_c").fill("42");
+  await page.locator("#curve-add").click();
+  assert.equal(await page.locator("#curve-steps tr").count(),4);
+  await page.getByRole("button",{name:"Remove step 3",exact:true}).click();
+  assert.equal(await page.locator("#curve-steps tr").count(),3);
+  await page.locator("#curve-steps .step-pwm").nth(1).fill("70");
+  await page.locator("#curve-apply").click();
+  await page.waitForFunction(()=>document.getElementById("curve-source").textContent.includes("Session settings"));
+  const curve=await (await fetch(url+"/api/curve")).json();
+  assert.equal(curve.settings.off_temp_c,42);assert.equal(curve.settings.steps[1].pwm_percent,70);
+  assert.equal(curve.automatic_control_active,false);
+  const downloadEvent=page.waitForEvent("download");
+  await page.locator("#curve-download").click();
+  const download=await downloadEvent;
+  assert.equal(download.suggestedFilename(),"fan_curve.json");
+  assert.deepEqual(JSON.parse(fs.readFileSync(await download.path(),"utf8")),curve.settings);
+  await page.locator("#off_temp_c").fill("40");
+  await page.locator("#curve-discard").click();
+  assert.equal(await page.locator("#off_temp_c").inputValue(),"42");
+  await page.locator("#apply").click();
+  await page.waitForFunction(()=>document.getElementById("pwm").textContent==="60" && document.getElementById("rpm").textContent==="900");
+  await page.waitForTimeout(6500);
+  assert.equal((await (await fetch(url+"/api/dashboard")).json()).requested_duty,60);
+  await page.locator("#off").click();
+  await page.waitForFunction(()=>document.getElementById("pwm").textContent==="0" && document.getElementById("rpm").textContent==="0");
+  await page.locator("#full").click();
+  await page.waitForFunction(()=>document.getElementById("pwm").textContent==="100" && document.getElementById("rpm").textContent==="1,500");
+  await page.locator("#release").click();
+  await page.waitForFunction(()=>document.getElementById("hold-state").textContent.includes("inactive"));
+  await page.locator("#curve-toggle").click();
+  await page.waitForFunction(()=>document.getElementById("curve-state").textContent.includes("active"));
+  assert.equal(await page.locator("#off").isDisabled(),true);
+  await page.locator("#curve-toggle").click();
+  await page.waitForFunction(()=>document.getElementById("curve-state").textContent.includes("paused"));
+  const out=process.env.FAN_SCREENSHOTS || "/private/tmp/dgx-fan-dashboard";
+  fs.mkdirSync(out,{recursive:true});
+  for(const [name,width,height] of [["desktop",1280,1100],["mobile",390,844],["narrow",320,740]]){
+    await page.setViewportSize({width,height});await page.waitForTimeout(200);
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+    const positions=await page.locator(".history-grid figure").evaluateAll(figures=>figures.map(figure=>figure.getBoundingClientRect().top));
+    if(width>800)assert.ok(positions.every(top=>top===positions[0]),"history charts share a row");
+    else assert.ok(positions[0]<positions[1] && positions[1]<positions[2],"small screens stack charts");
+    const pixels=await page.locator("canvas:not(#expanded-chart)").evaluateAll(canvases=>canvases.map(canvas=>{
+      const data=canvas.getContext("2d").getImageData(0,0,canvas.width,canvas.height).data;
+      let colored=0;for(let i=0;i<data.length;i+=4) if(data[i+3]>0 && Math.max(data[i],data[i+1],data[i+2])-Math.min(data[i],data[i+1],data[i+2])>30)colored++;
+      return colored;
+    }));
+    assert.ok(pixels.every(count=>count>100),"each chart has a visible data trace");
+    await page.screenshot({path:path.join(out,name+".png"),fullPage:true});
+    await page.getByRole("button",{name:"Expand temperature chart",exact:true}).click();
+    assert.equal(await page.locator("#history-dialog").isVisible(),true);
+    assert.equal(await page.evaluate(()=>document.body.classList.contains("modal-open")),true);
+    assert.equal(await page.locator("[data-range]").count(),7);
+    if(name==="desktop"){
+      assert.equal(await page.getByRole("button",{name:"All data",exact:true}).getAttribute("aria-pressed"),"true");
+      await page.getByRole("button",{name:"15 minutes",exact:true}).click();
+      assert.equal(await page.locator("#range-summary").textContent(),"Last 15 minutes / 1-minute samples");
+      assert.equal(await page.getByRole("button",{name:"15 minutes",exact:true}).getAttribute("aria-pressed"),"true");
+      await page.getByRole("button",{name:"All data",exact:true}).click();
+    }
+    await page.waitForTimeout(100);
+    const expanded=await page.locator("#expanded-chart").evaluate(canvas=>{
+      const data=canvas.getContext("2d").getImageData(0,0,canvas.width,canvas.height).data;
+      let colored=0;for(let i=0;i<data.length;i+=4)if(data[i+3]>0 && Math.max(data[i],data[i+1],data[i+2])-Math.min(data[i],data[i+1],data[i+2])>30)colored++;
+      return {colored,height:canvas.getBoundingClientRect().height};
+    });
+    assert.ok(expanded.colored>100 && expanded.height>=220);
+    assert.equal(await page.locator("#history-dialog").evaluate(dialog=>dialog.scrollWidth>dialog.clientWidth),false);
+    assert.equal(await page.locator("img").evaluateAll(images=>images.every(image=>image.complete && image.naturalWidth>0)),true);
+    await page.screenshot({path:path.join(out,name+"-modal.png")});
+    if(name==="desktop"){
+      for(const [tab,header,file] of [["Temperature","timestamp,gpu_temperature_c,cpu_temperature_c","temperature"],["Estimated RPM","timestamp,estimated_rpm","rpm"],["PWM output","timestamp,applied_pwm_percent","pwm"]]){
+        await page.getByRole("tab",{name:tab,exact:true}).click();
+        assert.equal(await page.locator("#history-export").isDisabled(),false);
+        const exportEvent=page.waitForEvent("download");
+        await page.locator("#history-export").click();
+        const exported=await exportEvent;
+        assert.match(exported.suggestedFilename(),new RegExp("^dgx-fan-"+file+"-\\d{4}-\\d{2}-\\d{2}\\.csv$"));
+        assert.equal(fs.readFileSync(await exported.path(),"utf8").split("\n",1)[0],header);
+      }
+      await page.getByRole("tab",{name:"Temperature",exact:true}).click();
+    }
+    await page.getByRole("tab",{name:"Estimated RPM",exact:true}).click();
+    assert.equal(await page.locator("#expanded-chart").getAttribute("aria-label"),"Estimated fan RPM over the last 24 hours");
+    await page.keyboard.press("ArrowRight");
+    assert.equal(await page.getByRole("tab",{name:"PWM output",exact:true}).getAttribute("aria-selected"),"true");
+    await page.getByRole("button",{name:"Close expanded chart",exact:true}).click();
+    assert.equal(await page.locator("#history-dialog").isVisible(),false);
+    assert.equal(await page.evaluate(()=>document.activeElement.dataset.expand),"temperature");
+    await page.getByRole("button",{name:"Expand estimated fan speed chart",exact:true}).click();
+    await page.keyboard.press("Escape");
+    assert.equal(await page.locator("#history-dialog").isVisible(),false);
+    await page.getByRole("button",{name:"Expand PWM chart",exact:true}).click();
+    await page.mouse.click(1,1);
+    assert.equal(await page.locator("#history-dialog").isVisible(),false);
+    assert.equal(await page.evaluate(()=>document.body.classList.contains("modal-open")),false);
+  }
+  await page.route("**/api/**",route=>route.abort());
+  await page.waitForFunction(()=>document.getElementById("connection").textContent==="Disconnected");
+  assert.equal(await page.locator("#off").isDisabled(),true);
+  await page.unroute("**/api/**");
+  await page.waitForFunction(()=>document.getElementById("connection").textContent==="Connected");
+  await page.locator("#apply").click();
+  await page.waitForFunction(()=>document.getElementById("hold-state").textContent.includes("active") && !document.getElementById("hold-state").textContent.includes("inactive"));
+  const fresh=await (await fetch(url+"/api/dashboard")).json();
+  const reboot={...fresh,boot_id:"new-boot",rpm:null,gpu_temperature_c:null,cpu_temperature_c:null,
+    telemetry_state:"missing",history_minutes:0,state:"awaiting_command",requested_duty:100,applied_duty:100};
+  await page.route("**/api/dashboard",route=>route.fulfill({json:reboot}));
+  await page.route("**/api/history*",route=>route.fulfill({json:{boot_id:"new-boot",rows:[],next_before:null}}));
+  await page.waitForFunction(()=>document.getElementById("gpu").textContent==="--");
+  await page.waitForFunction(()=>document.getElementById("history-state").textContent.startsWith("0 /"));
+  assert.equal(await page.locator("#temperature-empty").isVisible(),true);
+  assert.equal(await page.locator("#rpm-empty").isVisible(),true);
+  assert.equal(await page.locator("#hold-state").textContent(),"Browser hold inactive");
+  await page.screenshot({path:path.join(out,"empty-state.png"),fullPage:true});
+  await page.getByRole("button",{name:"Expand temperature chart",exact:true}).click();
+  assert.equal(await page.locator("#expanded-empty").isVisible(),true);
+  assert.equal(await page.locator("#history-export").isDisabled(),true);
+  await page.keyboard.press("Escape");
+
+  const recovery=await browser.newPage();
+  recovery.on("pageerror",error=>errors.push(error.message));
+  await recovery.route("**/api/curve",route=>route.fulfill({status:404,body:"File not found"}));
+  await recovery.goto(url);
+  await recovery.waitForFunction(()=>document.getElementById("curve-message").textContent.includes("Curve API missing (404)"));
+  assert.equal(await recovery.locator("#connection").textContent(),"Connected");
+  assert.equal(await recovery.locator("#curve-retry").isVisible(),true);
+  await recovery.unroute("**/api/curve");
+  await recovery.route("**/api/curve",route=>route.fulfill({json:{settings:{steps:null}}}));
+  await recovery.locator("#curve-retry").click();
+  await recovery.waitForFunction(()=>document.getElementById("curve-message").textContent.includes("Invalid curve response"));
+  await recovery.unroute("**/api/curve");
+  await recovery.locator("#curve-retry").click();
+  await recovery.waitForFunction(()=>document.getElementById("curve-steps").children.length===3);
+  assert.equal(await recovery.locator("#curve-retry").isVisible(),false);
+  await recovery.close();
+  await page.locator("#logout").click();
+  await page.waitForURL("**/login");
+  assert.deepEqual(errors,[]);
+  console.log("PASS: chart grid, expanded modal, keyboard/backdrop/focus behavior, curve 404/invalid-response recovery, controls, history, and responsive layouts. Screenshots: "+out);
+})().catch(error=>{console.error(error);process.exitCode=1;}).finally(async()=>{
+  if(browser)await browser.close();
+  child.kill();
+});

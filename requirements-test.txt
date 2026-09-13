@@ -1,0 +1,2 @@
+# Desktop-only HTTP integration checks. Use the CircuitPython bundle on the board.
+adafruit-circuitpython-httpserver==4.8.2

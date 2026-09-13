@@ -1,0 +1,9 @@
+{
+  "temperature_source": "max",
+  "off_temp_c": 45,
+  "steps": [
+    {"temperature_c": 50, "pwm_percent": 30},
+    {"temperature_c": 60, "pwm_percent": 60},
+    {"temperature_c": 75, "pwm_percent": 100}
+  ]
+}

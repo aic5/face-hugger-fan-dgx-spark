@@ -1,0 +1,25 @@
+# Deploy as settings.toml on CIRCUITPY. Keep real credentials out of Git.
+# Pico W requires a 2.4 GHz Wi-Fi network.
+WIFI_ENABLED = "1"
+WIFI_SSID = ""
+WIFI_PASSWORD = ""
+FAN_WEB_USERNAME = ""
+FAN_WEB_PASSWORD = ""
+DEVICE_NAME = "dgx-fan"
+FAN_HTTP_PORT = 80
+
+# Optional static network configuration. Leave all four absent to use DHCP.
+# WIFI_IPV4_ADDRESS = "192.168.2.77"
+# WIFI_IPV4_NETMASK = "255.255.255.0"
+# WIFI_IPV4_GATEWAY = "192.168.2.1"
+# WIFI_IPV4_DNS = "192.168.2.8"
+
+# The DGX must resend its selected duty before this interval expires, even when off.
+FAN_COMMAND_TIMEOUT = 30
+
+# Used only when WIFI_ENABLED = "0" (or no settings.toml is installed).
+FAN_DUTY_PERCENT = 60
+
+# Temperature curve: fan_curve.json (non-secret, separate from these credentials).
+# Web curve edits are session-only; deploy the downloaded JSON to persist them.
+# The DGX companion service sends temperatures and applies the automatic curve.

@@ -1,0 +1,30 @@
+# Python and MicroPython build output
+__pycache__/
+*.py[cod]
+*.mpy
+!lib/adafruit_httpserver/*.mpy
+.venv/
+venv/
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+secrets.py
+wifi_config.py
+settings.toml
+dgx/dgx-fan-telemetry.env
+
+# macOS and local editor state
+.DS_Store
+._*
+.idea/
+.vscode/
+
+# Downloaded firmware
+*.uf2
+
+# Local reports and scratch output
+tmp/
+coverage.xml
+.coverage

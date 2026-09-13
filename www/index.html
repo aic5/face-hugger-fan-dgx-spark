@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>DGX Spark | Cooling</title>
+  <link rel="stylesheet" href="/dashboard.css?v=7">
+  <script src="/dashboard-loader.js?v=1" defer></script>
+</head>
+<body>
+  <header>
+    <div class="identity"><span class="brand-mark" aria-hidden="true">DGX</span><div><h1>DGX Spark</h1><p>External cooling <span class="divider">/</span> Pico W</p></div></div>
+    <div class="connection"><span id="connection" class="badge">Connecting</span><span id="last-seen">No readings yet</span><button id="logout" class="text-button" type="button">Log out</button></div>
+  </header>
+  <main>
+    <section class="overview" aria-label="Live readings">
+      <div class="metric"><h2>Estimated fan speed</h2><p class="value"><span id="rpm">--</span> <small>RPM</small></p><span id="rpm-state">Calculated from PWM</span></div>
+      <div class="metric"><h2>PWM output</h2><p class="value"><span id="pwm">--</span> <small>%</small></p><span id="fan-state">Awaiting controller</span></div>
+      <div class="metric"><h2><i class="swatch gpu"></i>GPU temperature</h2><p class="value"><span id="gpu">--</span> <small>&deg;C</small></p><span id="gpu-state">No telemetry</span></div>
+      <div class="metric"><h2><i class="swatch cpu"></i>CPU temperature</h2><p class="value"><span id="cpu">--</span> <small>&deg;C</small></p><span id="cpu-state">No telemetry</span></div>
+    </section>
+    <section class="control" aria-labelledby="control-title">
+      <div class="section-heading"><h2 id="control-title">Fan control</h2><span id="hold-state">Browser hold inactive</span></div>
+      <div class="control-grid">
+        <div class="speed-field"><label for="speed">Requested PWM <output id="speed-label" for="speed">60%</output></label><input id="speed" type="range" min="20" max="100" step="1" value="60"><div class="range-labels"><span>20%</span><span>100%</span></div></div>
+        <div class="commands"><button id="apply" class="primary" disabled>Apply speed</button><button id="full" disabled>Full speed</button><button id="off" disabled>Off</button><button id="release" disabled>Release hold</button></div>
+      </div>
+      <div class="control-footer"><span id="control-message" role="status">Ready when connected</span><span id="timeout">Command timeout: --</span></div>
+    </section>
+    <section class="curve-section" aria-labelledby="curve-title">
+      <div class="section-heading"><h2 id="curve-title">Temperature / speed curve</h2><span id="curve-state">Checking automatic control</span></div>
+      <div class="curve-grid">
+        <form id="curve-form">
+          <label class="source-field" for="temperature_source">Temperature source<select id="temperature_source" name="temperature_source"><option value="max">Higher of CPU / GPU</option><option value="gpu">GPU</option><option value="cpu">CPU</option></select></label>
+          <table class="curve-table"><thead><tr><th scope="col">Point</th><th scope="col">Temp (&deg;C)</th><th scope="col">PWM (%)</th><th scope="col"><button id="curve-add" type="button" class="step-icon" aria-label="Add intermediate step" title="Add intermediate step" disabled>+</button></th></tr></thead><tbody>
+            <tr><th scope="row">Stop at / below</th><td><input id="off_temp_c" type="number" min="0" max="125" step="0.1" required aria-label="Stop temperature"></td><td><output>0</output></td><td></td></tr>
+          </tbody><tbody id="curve-steps"></tbody></table>
+          <div class="curve-actions"><button id="curve-toggle" type="button" disabled>Activate temperature curve</button><button id="curve-apply" type="submit" disabled>Apply for session</button><button id="curve-download" type="button" disabled>Download curve file</button><button id="curve-discard" type="button" disabled>Discard edits</button></div>
+        </form>
+        <div class="curve-preview"><div class="section-heading"><h3>Configured PWM</h3><span id="hysteresis">Hysteresis --</span></div><div class="plot"><canvas id="curve-chart" role="img" aria-label="Configured fan PWM versus DGX temperature, with separate restart and stop thresholds"></canvas></div><div class="curve-legend"><span><i class="swatch fan"></i>Warming</span><span><i class="swatch gpu"></i>Cooling</span></div><div class="curve-details"><span id="curve-rpm">Estimated fan speed -- RPM</span><span id="curve-source">Configuration unavailable</span></div></div>
+      </div>
+      <div class="curve-feedback"><p id="curve-message" role="status">Loading curve settings</p><button id="curve-retry" type="button" hidden>Retry</button></div>
+    </section>
+    <section class="history" aria-labelledby="history-title">
+      <div class="section-heading history-heading"><div><h2 id="history-title">Cooling history</h2><p id="history-state">Loading samples</p></div><div class="history-range">Last 24 hours <span class="divider">/</span> 1-minute samples</div></div>
+      <div class="history-grid">
+        <figure><figcaption><div class="chart-title"><h3>Temperature</h3><button class="icon-button" data-expand="temperature" title="Expand temperature chart" aria-label="Expand temperature chart"><svg aria-hidden="true" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" x2="14" y1="3" y2="10"/><line x1="3" x2="10" y1="21" y2="14"/></svg></button></div><div class="legend"><span><i class="swatch gpu"></i>GPU</span><span><i class="swatch cpu"></i>CPU</span><span>&deg;C</span></div></figcaption><div class="plot"><canvas id="temperature-chart" role="img" aria-label="GPU and CPU temperature over the last 24 hours"></canvas><span class="empty" id="temperature-empty">No temperature samples</span></div><div class="readout" id="temperature-readout">No telemetry</div></figure>
+        <figure><figcaption><div class="chart-title"><h3>Estimated fan speed</h3><button class="icon-button" data-expand="rpm" title="Expand estimated fan speed chart" aria-label="Expand estimated fan speed chart"><svg aria-hidden="true" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" x2="14" y1="3" y2="10"/><line x1="3" x2="10" y1="21" y2="14"/></svg></button></div><div class="legend"><span><i class="swatch fan"></i>Linear PWM estimate</span><span>RPM</span></div></figcaption><div class="plot"><canvas id="rpm-chart" role="img" aria-label="Estimated fan RPM over the last 24 hours"></canvas><span class="empty" id="rpm-empty">No PWM samples</span></div><div class="readout" id="rpm-readout">No estimate</div></figure>
+        <figure><figcaption><div class="chart-title"><h3>PWM output</h3><button class="icon-button" data-expand="pwm" title="Expand PWM chart" aria-label="Expand PWM chart"><svg aria-hidden="true" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" x2="14" y1="3" y2="10"/><line x1="3" x2="10" y1="21" y2="14"/></svg></button></div><div class="legend"><span><i class="swatch duty"></i>Applied duty</span><span>%</span></div></figcaption><div class="plot"><canvas id="pwm-chart" role="img" aria-label="Applied PWM over the last 24 hours"></canvas><span class="empty" id="pwm-empty">No PWM samples</span></div><div class="readout" id="pwm-readout">No reading</div></figure>
+      </div>
+    </section>
+  </main>
+  <footer><span>Noctua NF-A14 PWM <span class="divider">/</span> Raspberry Pi Pico W</span><span id="uptime">Controller uptime --</span></footer>
+  <dialog id="history-dialog" aria-labelledby="history-dialog-title">
+    <div class="modal-header"><div><h2 id="history-dialog-title">Cooling history</h2><p id="range-summary">All retained data / 1-minute samples</p></div><div class="modal-actions"><button id="history-export" type="button" disabled>Export CSV</button><button id="history-close" class="icon-button" aria-label="Close expanded chart" title="Close expanded chart"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div></div>
+    <div class="chart-tabs" role="tablist" aria-label="Expanded chart">
+      <button id="tab-temperature" role="tab" aria-selected="true" aria-controls="expanded-panel" data-chart="temperature">Temperature</button>
+      <button id="tab-rpm" role="tab" aria-selected="false" aria-controls="expanded-panel" data-chart="rpm" tabindex="-1">Estimated RPM</button>
+      <button id="tab-pwm" role="tab" aria-selected="false" aria-controls="expanded-panel" data-chart="pwm" tabindex="-1">PWM output</button>
+    </div>
+    <div class="chart-range-row"><span>Time range</span><div class="chart-ranges" role="group" aria-label="Chart time range">
+      <button type="button" data-range="all" aria-pressed="true">All data</button>
+      <button type="button" data-range="24h" aria-pressed="false">24 hours</button>
+      <button type="button" data-range="12h" aria-pressed="false">12 hours</button>
+      <button type="button" data-range="3h" aria-pressed="false">3 hours</button>
+      <button type="button" data-range="1h" aria-pressed="false">1 hour</button>
+      <button type="button" data-range="30m" aria-pressed="false">30 minutes</button>
+      <button type="button" data-range="15m" aria-pressed="false">15 minutes</button>
+    </div></div>
+    <div id="expanded-panel" role="tabpanel" aria-labelledby="tab-temperature"><div id="expanded-legend"></div><div class="plot"><canvas id="expanded-chart" role="img" aria-label="Expanded cooling history"></canvas><span id="expanded-empty" class="empty">No samples yet</span></div><div id="expanded-readout" class="readout"></div></div>
+  </dialog>
+</body>
+</html>

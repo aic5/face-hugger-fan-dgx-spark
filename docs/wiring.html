@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DGX Spark Fan Wiring | Pico W + NF-A14 PWM</title>
+  <style>
+    :root { color-scheme: light; --ink:#202c32; --muted:#52636b; --line:#d7dfe2; --paper:#fff; --ground:#32383c; --yellow:#a77900; --green:#167343; --blue:#1965ba; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:#f4f6f7; color:var(--ink); font:16px/1.6 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; letter-spacing:0; }
+    main { max-width:1080px; margin:auto; padding:44px 48px; background:var(--paper); }
+    header { border-bottom:3px solid var(--ink); padding-bottom:24px; }
+    .eyebrow, .section-number { font-size:12px; font-weight:750; text-transform:uppercase; letter-spacing:0; color:var(--muted); }
+    h1 { font-size:36px; line-height:1.15; margin:10px 0 12px; }
+    h2 { font-size:24px; line-height:1.25; margin:4px 0 16px; }
+    h3 { font-size:17px; margin:18px 0 8px; }
+    p { margin:8px 0 14px; }
+    a { color:#12618a; text-underline-offset:3px; overflow-wrap:anywhere; }
+    nav { display:flex; flex-wrap:wrap; gap:8px 22px; padding:18px 0; border-bottom:1px solid var(--line); font-size:14px; }
+    section { padding:28px 0; border-bottom:1px solid var(--line); scroll-margin-top:16px; }
+    .meta, figcaption, .small { font-size:13px; color:var(--muted); }
+    .notice { border-left:4px solid #b32f3b; background:#fff3f3; padding:14px 18px; margin:20px 0; }
+    .note { border-left:3px solid #2c7892; padding:4px 0 4px 16px; margin:18px 0; }
+    .notice p, .note p { margin:0; }
+    figure { margin:20px 0; }
+    .diagram { overflow-x:auto; border:1px solid var(--line); background:#fcfdfd; }
+    .diagram svg { display:block; width:100%; min-width:720px; height:auto; }
+    .diagram.compact svg { min-width:560px; }
+    svg text { font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; font-size:15px; fill:var(--ink); }
+    svg .label { font-size:17px; font-weight:700; }
+    svg .minor { font-size:13px; fill:var(--muted); }
+    svg .white { fill:#fff; }
+    svg .unit { fill:#fff; stroke:#96a7b0; stroke-width:1.5; }
+    svg .wire { fill:none; stroke-width:3; stroke-linejoin:round; stroke-linecap:round; }
+    figcaption { margin-top:9px; }
+    .table-scroll { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; font-size:14px; text-align:left; }
+    th { background:#eef2f3; font-weight:700; }
+    th,td { padding:12px; border-bottom:1px solid var(--line); vertical-align:top; }
+    .wire-name { white-space:nowrap; font-weight:650; }
+    .swatch { display:inline-block; width:11px; height:11px; margin-right:7px; border:1px solid #0003; }
+    .black { background:var(--ground); } .yellow { background:#edc43c; } .green { background:var(--green); } .blue { background:var(--blue); }
+    code { font:0.91em ui-monospace,SFMono-Regular,Consolas,monospace; background:#eef2f3; padding:1px 4px; overflow-wrap:anywhere; }
+    .columns { display:grid; grid-template-columns:1fr 1fr; gap:30px; }
+    .board-identification { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:24px; align-items:center; margin:18px 0; }
+    .board-identification svg { display:block; width:100%; height:auto; background:#fff; }
+    ul,ol { padding-left:24px; } li { margin:9px 0; }
+    .checks { list-style:none; padding:0; counter-reset:check; }
+    .checks li { position:relative; padding-left:34px; }
+    .checks li::before { content:""; position:absolute; left:1px; top:6px; width:15px; height:15px; border:1.5px solid #70858f; }
+    footer { padding-top:20px; font-size:13px; color:var(--muted); }
+    @media(max-width:650px) { main { padding:26px 18px; } h1 { font-size:30px; } h2 { font-size:22px; } .columns, .board-identification { grid-template-columns:1fr; gap:0; } th,td { padding:10px 8px; } }
+    @media print { @page { size:A4; margin:14mm; } body,main { background:#fff; } main { max-width:none; padding:0; } body { font-size:10pt; } h1 { font-size:26pt; } h2 { font-size:17pt; } nav { display:none; } section { padding:16px 0; } figure, tr, .notice, .note { break-inside:avoid; } h2,h3 { break-after:avoid; } .diagram { overflow:visible; } .diagram svg, .diagram.compact svg { min-width:0; } .table-scroll { overflow:visible; } a { color:inherit; } * { print-color-adjust:exact; -webkit-print-color-adjust:exact; } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">Face Hugger Fan / Hardware reference / September 2026</div>
+    <h1>DGX Spark External Fan Wiring</h1>
+    <p>Raspberry Pi Pico W &middot; CircuitPython &middot; Noctua NF-A14 PWM, standard 12 V model</p>
+    <div class="meta">Matches the current project pin assignments. The optional USB-C board is identified as an ANMBEST JRC-B008; its CC circuitry, the exact boost converter and each assembly still require verification.</div>
+  </header>
+  <nav aria-label="Document sections">
+    <a href="#usb-c-board">USB-C board</a><a href="#power-diagram">Complete power diagram</a><a href="#connections">Fan connections</a><a href="#pico">Pico pin locator</a><a href="#tach">RPM feedback</a><a href="#checks">First power-up</a>
+  </nav>
+
+  <div class="notice"><p><strong>12 V goes to the fan motor only.</strong> Never connect yellow / +12 V to a Pico pin or USB power rail. Disconnect all power before making or moving connections. Fit a fan guard and secure loose wires before testing.</p></div>
+
+  <div id="usb-c-board" class="board-identification">
+    <div class="note"><p><strong>Optional advanced variant.</strong> The simplest first build powers the Pico through its micro-USB socket. Use the USB-C/VSYS path below only after verifying the actual breakout, CC termination, voltage, diode orientation and power budget.</p></div>
+    <div>
+      <div class="section-number">USB-C input board</div>
+      <h2>ANMBEST JRC-B008</h2>
+      <p>The prototype source material identifies an ANMBEST JRC-B008 breakout with four exposed pads marked <strong>G, D+, D-, V</strong>. Confirm the markings and pad order on your actual board.</p>
+      <p><a href="#power-diagram">See the USB-C board connected to the Pico and boost converter</a>.</p>
+      <p class="small">The repository deliberately omits the third-party product photograph. CC termination and 5 V output still require verification.</p>
+    </div>
+  </div>
+
+  <section id="connections">
+    <div class="section-number">01 / The four fan wires</div>
+    <h2>Fan-side connections</h2>
+    <p class="small">This first diagram covers the fan connector only. The USB-C board and VSYS supply are in the <a href="#power-diagram">complete power diagram</a>.</p>
+    <p>Use a mating 4-pin PC fan header or a labelled breakout/extension. The numbers below identify electrical functions, <strong>not a left-to-right view of your plug</strong>. The wire-side and mating-face views are mirrored; confirm the key and pin numbers before connecting.</p>
+    <figure>
+      <div class="diagram" tabindex="0" aria-label="Scrollable four-wire connection diagram">
+        <!-- Logical net diagram, deliberately not a physical connector-face drawing. -->
+        <svg viewBox="0 0 960 385" role="img" aria-labelledby="connection-title connection-desc">
+          <title id="connection-title">Fan connections to the boost converter and Pico W</title>
+          <desc id="connection-desc">Fan pin 1 black joins boost output negative and Pico ground physical pin 18. Pin 2 yellow joins boost output positive 12 volts. Pin 3 green joins optional Pico GP13 physical pin 17. Pin 4 blue joins Pico GP15 physical pin 20.</desc>
+          <rect class="unit" x="28" y="36" width="274" height="300" rx="6"/>
+          <text class="label" x="48" y="67">NF-A14 PWM</text>
+          <text class="minor" x="48" y="92">Logical fan pin assignments</text>
+          <text x="48" y="134">1 / BLACK / Ground</text>
+          <text x="48" y="184">2 / YELLOW / +12 V</text>
+          <text x="48" y="254">3 / GREEN / Tach out</text>
+          <text x="48" y="304">4 / BLUE / PWM in</text>
+          <rect class="unit" x="666" y="36" width="266" height="126" rx="6"/>
+          <text class="label" x="686" y="67">Boost converter output</text>
+          <text x="686" y="104">OUT+ / regulated 12 V</text>
+          <text x="686" y="144">OUT- / ground</text>
+          <rect class="unit" x="666" y="193" width="266" height="143" rx="6"/>
+          <text class="label" x="686" y="222">Pico W</text>
+          <text x="686" y="254">GP13 / physical pin 17</text>
+          <text x="686" y="279">GND / physical pin 18</text>
+          <text x="686" y="304">GP15 / physical pin 20</text>
+          <path class="wire" stroke="#32383c" d="M302 129H460V139H666 M460 139V274H666"/>
+          <circle cx="460" cy="139" r="5" fill="#32383c"/>
+          <path fill="none" stroke="#fcfdfd" stroke-width="9" d="M302 179H400V99H666"/>
+          <path class="wire" stroke="#a77900" d="M302 179H400V99H666"/>
+          <path fill="none" stroke="#fcfdfd" stroke-width="9" d="M444 249Q460 229 476 249"/>
+          <path class="wire" stroke="#167343" stroke-dasharray="8 5" d="M302 249H444 Q460 229 476 249H666"/>
+          <text class="minor" x="484" y="237">Tach feedback</text>
+          <path class="wire" stroke="#1965ba" d="M302 299H666"/>
+          <text class="minor" x="368" y="323">3.3 V PWM / 25 kHz / Pico to fan</text>
+          <text class="minor" x="28" y="366">Filled dot = connected junction. Gap or curved jump = no connection.</text>
+        </svg>
+      </div>
+      <figcaption>Figure 1. Motor power and speed control are separate circuits. Wire functions: <a href="https://www.noctua.at/en/support/faqs/microcontroller-guide-pwm-setup-and-rpm-monitoring">Noctua microcontroller guide</a>. GPIO choices: this project's <code>code.py</code>.</figcaption>
+    </figure>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Fan pin / wire</th><th>Connect to</th><th>Comment</th></tr></thead>
+        <tbody>
+          <tr><td class="wire-name"><span class="swatch black"></span>1 / Black</td><td>Boost OUT- and Pico GND, <strong>pin 18</strong></td><td>Common reference. Route motor return directly to the supply, not through Pico traces.</td></tr>
+          <tr><td class="wire-name"><span class="swatch yellow"></span>2 / Yellow</td><td>Boost OUT+, <strong>regulated 12 V</strong></td><td>No connection to Pico power pins.</td></tr>
+          <tr><td class="wire-name"><span class="swatch green"></span>3 / Green</td><td>Pico <strong>GP13, pin 17</strong></td><td>RPM input; firmware sensing is automatic. Add the pull-up/filter in Figure 4.</td></tr>
+          <tr><td class="wire-name"><span class="swatch blue"></span>4 / Blue</td><td>Pico <strong>GP15, pin 20</strong></td><td>Direct, non-inverted output used by this firmware.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small">Colour is a cross-check, not proof: chromax cables and third-party extensions may differ. Use Noctua's keyed connector drawing in the <a href="https://cdn.noctua.at/media/Noctua_PWM_specifications_white_paper.pdf">PWM specification, connector section</a>.</p>
+  </section>
+
+  <section id="power">
+    <div class="section-number">02 / Power distribution</div>
+    <h2>USB-C board, Pico and boost converter</h2>
+    <p>The supplied product image identifies an <strong>ANMBEST JRC-B008 female USB-C breakout</strong>, with pads marked <strong>G, D+, D- and V</strong>. Here, G means GND and V is USB VBUS. It appears to be a passive connector breakout, not a voltage regulator, boost converter or PD trigger. This circuit requires <strong>5 V at V</strong>, measured before connecting VSYS. <a href="https://www.amazon.com/dp/B09WCSF8FC?th=1">User-supplied product link</a>.</p>
+    <figure>
+      <div class="diagram compact" tabindex="0" aria-label="USB-C breakout pad orientation from the supplied product image">
+        <svg viewBox="0 0 720 285" role="img" aria-labelledby="breakout-title breakout-desc">
+          <title id="breakout-title">ANMBEST JRC-B008 pad-side orientation</title>
+          <desc id="breakout-desc">With the labelled solder-pad side facing you and the USB-C socket opening to the left, the four pads on the right edge are G, D plus, D minus and V from top to bottom. This drawing follows the supplied product image, not a verified physical board.</desc>
+          <text class="label" x="28" y="35">ANMBEST / JRC-B008</text>
+          <rect x="220" y="66" width="154" height="166" rx="3" fill="#12618a"/>
+          <rect x="66" y="66" width="205" height="166" rx="8" fill="#d3dade" stroke="#748791" stroke-width="2"/>
+          <rect x="54" y="89" width="27" height="120" rx="12" fill="#52636b"/>
+          <text x="116" y="140">USB-C socket</text><text class="minor" x="119" y="163">Opening left</text>
+          <g fill="#dde3e6" stroke="#7c8a94">
+            <rect x="338" y="76" width="36" height="26"/>
+            <rect x="338" y="118" width="36" height="26"/>
+            <rect x="338" y="160" width="36" height="26"/>
+            <rect x="338" y="202" width="36" height="26"/>
+          </g>
+          <text class="white" x="286" y="95">G</text><text class="white" x="286" y="137">D+</text>
+          <text class="white" x="286" y="179">D-</text><text class="white" x="286" y="221">V</text>
+          <path class="wire" stroke="#32383c" d="M374 89H410"/><text x="424" y="95">GND / common return</text>
+          <path class="wire" stroke="#1965ba" d="M374 131H410"/><text x="424" y="137">USB D+ / to Pico TP3</text>
+          <path class="wire" stroke="#75428f" d="M374 173H410"/><text x="424" y="179">USB D- / to Pico TP2</text>
+          <path class="wire" stroke="#b32f3b" d="M374 215H410"/><text x="424" y="221">VBUS / verify 5 V first</text>
+          <text class="minor" x="28" y="266">Pad-side view from the supplied image. Not to scale. Match labels on the actual board.</text>
+        </svg>
+      </div>
+      <figcaption>Pad locator. In this orientation, top to bottom: G, D+, D-, V. Rotating or flipping the board changes the apparent order. The product image lists approximately 15 &times; 9 mm; measure the actual part before designing its enclosure.</figcaption>
+    </figure>
+    <div class="notice"><p><strong>USB-C compatibility is not confirmed.</strong> A basic USB-C power-sink receptacle needs a separate 5.1 k&#8486; pull-down from CC1 to GND and another from CC2 to GND. Do not join CC1 and CC2 together. The supplied image shows an R1 area, but does not establish the values or presence of both independent pull-downs. These CC contacts are not among the four exposed pads. Do not assume that adding one resistor at R1 fixes the board. <a href="https://www.renesas.com/en/support/engineer-school/usb-power-delivery-03">Renesas USB-C sink guidance</a>.</p></div>
+    <p><strong>Before connecting the Pico or boost:</strong> confirm the CC circuit with the supplier's schematic or measurements on the unpowered board. Then test V-to-G using the intended DGX USB-C cable in both plug orientations. Expect approximately 5 V; no voltage or orientation-dependent power can indicate a CC problem. Successful power-up alone does not certify the board or establish available current. Use a breakout with documented independent CC pull-downs if this one cannot be verified.</p>
+    <p class="small">The image's 20 V / 3 A figures are connector ratings, not a promised output voltage or permission to draw 3 A. The four exposed pads provide a USB 2.0-style data connection, not SuperSpeed lanes, regardless of the listing's USB 3.1 wording. The live Amazon page could not be retrieved; board-specific observations here come from your supplied product image.</p>
+    <p>The connection diagram below uses a different, logical terminal order for routing clarity. <strong>Follow pad labels, not drawing position.</strong> Pico power enters VSYS through the added diode; the separate boost branch provides fan motor power.</p>
+    <figure id="power-diagram">
+      <h3>USB-C board connections</h3>
+      <div class="diagram" tabindex="0" aria-label="Scrollable shared USB power diagram">
+        <svg viewBox="0 0 960 635" role="img" aria-labelledby="power-title power-desc">
+          <title id="power-title">USB-C terminals to Pico VSYS and USB test pads</title>
+          <desc id="power-desc">USB-C V, verified five volts, feeds Pico VSYS physical pin 39 through an added Schottky diode with cathode toward Pico, and a separate switched boost converter branch. D plus connects to Pico TP3, D minus to TP2, and GND to Pico physical pin 38 and the common ground. TP1 is the nearby USB signal ground pad. Boost twelve volt output feeds the fan only. The Pico micro USB socket is unused in this arrangement.</desc>
+          <rect class="unit" x="28" y="25" width="240" height="70" rx="6"/>
+          <text class="label" x="46" y="54">DGX Spark</text><text x="46" y="79">USB-C source / host</text>
+          <path class="wire" stroke="#647681" d="M148 95V130"/>
+          <text class="minor" x="170" y="117">USB-C cable</text>
+          <rect x="28" y="130" width="240" height="245" rx="6" fill="#edf7fa" stroke="#12618a" stroke-width="2"/>
+          <text class="label" x="46" y="154">USB-C BOARD</text>
+          <text class="minor" x="46" y="175">ANMBEST JRC-B008 / logical view</text>
+          <text x="46" y="195">V / verify +5 V</text>
+          <text x="46" y="245">D+ / USB data plus</text>
+          <text x="46" y="295">D- / USB data minus</text>
+          <text x="46" y="345">G / common return</text>
+          <rect class="unit" x="630" y="130" width="302" height="245" rx="6"/>
+          <text class="label" x="650" y="159">Pico W / external power</text>
+          <text x="650" y="195">VSYS / physical pin 39</text>
+          <text x="650" y="245">TP3 / USB D+</text>
+          <text x="650" y="295">TP2 / USB D-</text>
+          <text x="650" y="345">GND / physical pin 38</text>
+          <!-- Added diode is shown as an axial package; its band marks the cathode. -->
+          <path class="wire" stroke="#b32f3b" d="M268 190H407 M492 190H630 M300 190V397H160V425"/>
+          <circle cx="300" cy="190" r="5" fill="#b32f3b"/>
+          <rect x="407" y="173" width="85" height="34" rx="3" fill="#fff" stroke="#b32f3b" stroke-width="2"/>
+          <path d="M480 173V207" stroke="#b32f3b" stroke-width="6"/>
+          <text class="minor" x="421" y="195">diode</text>
+          <text x="380" y="151">Added Schottky diode</text>
+          <text class="minor" x="388" y="224">Band / cathode toward VSYS</text>
+          <path fill="none" stroke="#fcfdfd" stroke-width="9" d="M268 240H630 M268 290H630 M268 340H630"/>
+          <path class="wire" stroke="#1965ba" d="M268 240H630"/>
+          <path class="wire" stroke="#75428f" d="M268 290H630"/>
+          <text class="minor" x="347" y="273">USB pair / not GPIO pins</text>
+          <path class="wire" stroke="#32383c" d="M268 340H630"/>
+          <text class="minor" x="351" y="362">Also to TP1 near USB data pads</text>
+          <text class="minor" x="327" y="399">5 V fan branch, before Pico diode</text>
+          <rect x="28" y="425" width="270" height="80" rx="6" fill="#fff" stroke="#788b96" stroke-dasharray="6 4"/>
+          <text class="label" x="46" y="456">Fan branch switch / enable</text><text class="minor" x="46" y="482">Proposed; sequencing still required</text>
+          <path class="wire" stroke="#b32f3b" d="M298 465H390"/>
+          <rect class="unit" x="390" y="425" width="220" height="80" rx="6"/>
+          <text class="label" x="408" y="456">5 V to 12 V boost</text><text class="minor" x="408" y="482">IN+ = 5 V / OUT+ = 12 V</text>
+          <path class="wire" stroke="#a77900" d="M610 465H715"/>
+          <text class="minor" x="674" y="451">12 V</text>
+          <rect class="unit" x="715" y="425" width="217" height="80" rx="6"/>
+          <text class="label" x="735" y="456">Fan motor</text><text x="735" y="482">Yellow = pin 2</text>
+          <path fill="none" stroke="#fcfdfd" stroke-width="9" d="M650 452V478"/>
+          <path class="wire" stroke="#32383c" d="M600 340V385H650V555H28 M650 555H932 M498 505V555 M823 505V555"/>
+          <circle cx="600" cy="340" r="5" fill="#32383c"/><circle cx="650" cy="555" r="5" fill="#32383c"/>
+          <circle cx="498" cy="555" r="5" fill="#32383c"/><circle cx="823" cy="555" r="5" fill="#32383c"/>
+          <text class="minor" x="28" y="585">Common GND: USB-C GND + Pico GND (38/18) + TP1 + boost IN-/OUT- + fan black.</text>
+          <text class="minor" x="28" y="611">Filled dot = connection. Gapped crossing = not connected. Fan PWM/tach: see Figure 1.</text>
+        </svg>
+      </div>
+      <figcaption>Figure 2. Header-power arrangement; Pico micro-USB socket unused. TP1/TP2/TP3 are underside test pads, not header pins. Assumes a non-isolated boost converter. Confirm pad identity against the <a href="https://datasheets.raspberrypi.com/picow/pico-w-datasheet.pdf">Pico W datasheet, sections 2.1 and 3.5</a> before soldering.</figcaption>
+    </figure>
+    <div class="table-scroll"><table>
+      <thead><tr><th>USB-C board terminal</th><th>Destination</th><th>Comment</th></tr></thead>
+      <tbody>
+        <tr><td><strong>V</strong></td><td>Added Schottky diode, then <strong>VSYS / pin 39</strong>; separate branch to boost IN+ via switch</td><td>Verify 5 V first. Diode anode toward V, cathode/band toward VSYS. The motor branch must not pass through this diode or the Pico.</td></tr>
+        <tr><td><strong>D+</strong></td><td><strong>TP3 / USB DP</strong></td><td>Optional until using USB data; not GP3 or physical pin 3.</td></tr>
+        <tr><td><strong>D-</strong></td><td><strong>TP2 / USB DM</strong></td><td>Optional until using USB data; not GP2 or physical pin 2.</td></tr>
+        <tr><td><strong>G (GND)</strong></td><td><strong>GND / pin 38</strong>, common ground, and TP1 alongside the USB pair</td><td>Pin 38 and the fan's Pico ground at pin 18 are internally connected. Route motor return directly to the supply.</td></tr>
+      </tbody>
+    </table></div>
+    <div class="note"><p><strong>VSYS supply protection:</strong> the added Schottky diode prevents a later Pico USB power source from feeding back into the external V rail through VSYS. It is additional to the diode already on the Pico. Select a diode rated for Pico peak current, with suitable reverse-voltage margin. VSYS allows 1.8&ndash;5.5 V; this build uses verified 5 V before the diode, never the boost's 12 V. <a href="https://datasheets.raspberrypi.com/picow/pico-w-datasheet.pdf">Pico W power guidance</a>.</p></div>
+    <p><strong>USB data assembly:</strong> TP2/TP3 are small solder pads. Keep the data pair short, routed together and away from the boost converter; provide strain relief and verify USB enumeration. For Wi-Fi-only operation, leave D+/D- individually insulated. Alternatively use a proper micro-USB plug breakout for data rather than soldering the pads; do not mix the two data paths.</p>
+    <div class="notice"><p><strong>One USB host at a time.</strong> While D+/D- are attached to the DGX through the USB-C board, do not plug a computer into the Pico's micro-USB socket. The socket and test pads share the same USB bus. A VSYS diode protects power sources, not against two USB hosts being connected together. Disconnect the breakout's data connection before using the socket for programming.</p></div>
+    <div class="columns">
+      <div>
+        <h3>Check the current budget</h3>
+        <p>The standard fan is rated up to <strong>0.13 A at 12 V / 1.56 W</strong>. At an assumed 85% converter efficiency, the fan alone draws about <strong>0.37 A at 5 V</strong>, plus Pico consumption and startup margin. This is an estimate, not a measured load. <a href="https://www.noctua.at/en/products/nf-a14-pwm/specifications">Fan ratings</a>.</p>
+        <p>Verify the USB source's available current, breakout/cable limits and converter continuous/startup ratings. The JRC-B008's CC termination remains unverified; the connector's 3 A rating does not establish the source's current allowance. Do not use Pico's 3.3 V output to power the motor.</p>
+      </div>
+      <div>
+        <h3>Keep 12 V off the USB rail</h3>
+        <p>The boost output feeds only the motor branch. A USB-PD trigger requesting more than 5 V is <strong>not equivalent</strong> to this arrangement. Never feed that voltage into the Pico's USB socket or power pins.</p>
+        <p>Preserve a proper USB data path to the Pico. Do not splice or parallel USB data lines to create a hub.</p>
+      </div>
+    </div>
+    <div class="notice"><p><strong>Unresolved hardware detail: power sequencing.</strong> The fan's PWM input has an internal pull-up. With direct GPIO wiring, do not leave the fan powered while the Pico is unpowered. For bench tests, enable the fan supply only after the Pico is running; disable it before unplugging, resetting or flashing the Pico. One shared USB source alone does not guarantee this sequence. Before unattended use, verify sequencing or design a suitable power-off-tolerant signal interface. The proposed switch above is not assumed to be installed.</p></div>
+    <p class="small">Interface basis: <a href="https://cdn.noctua.at/media/Noctua_PWM_specifications_white_paper.pdf">Noctua PWM electrical specification</a>. The sequencing precaution is a design constraint for this direct-GPIO circuit, not a claim that the fan has a built-in sequencing feature.</p>
+  </section>
+
+  <section id="pico">
+    <div class="section-number">03 / Board orientation</div>
+    <h2>Find the physical Pico pins</h2>
+    <p><strong>Component side facing you, micro-USB connector at the top.</strong> Physical pin numbers are not GPIO numbers: <strong>GP15 is physical pin 20</strong>, not pin 15.</p>
+    <figure>
+      <div class="diagram compact" tabindex="0" aria-label="Scrollable Pico W physical pin locator">
+        <!-- Component-side orientation verified against Raspberry Pi's Pico W pinout. -->
+        <svg viewBox="0 0 720 590" role="img" aria-labelledby="pico-title pico-desc">
+          <title id="pico-title">Pico W component-side physical pin locator</title>
+          <desc id="pico-desc">USB at top. Left header counts 1 at top to 20 at bottom. Right header counts 40 at top to 21 at bottom. Upper-right pin 39 is VSYS power input, pin 38 ground, and pin 36 the 3.3 volt output. Lower-left pin 17 is GP13, pin 18 ground, pin 19 unused GP14, and bottom pin 20 GP15. USB TP1/TP2/TP3 are underneath and not shown.</desc>
+          <rect x="255" y="67" width="210" height="452" rx="6" fill="#245848"/>
+          <rect x="325" y="43" width="70" height="55" rx="4" fill="#cbd4d8" stroke="#536974"/>
+          <rect x="337" y="50" width="46" height="12" rx="2" fill="#52636b"/>
+          <text class="label" x="360" y="27" text-anchor="middle">Micro-USB / unused in Figure 2</text>
+          <text class="white label" x="360" y="260" text-anchor="middle">Pico W</text>
+          <text class="white" x="360" y="286" text-anchor="middle">Component side</text>
+          <rect x="315" y="325" width="90" height="91" rx="3" fill="#d2dadd"/>
+          <text class="minor" x="360" y="374" text-anchor="middle">Radio shield</text>
+          <g fill="#dbe3df" stroke="#bcc9c3" stroke-width="2">
+            <path d="M255 91H270 M255 112H270 M255 133H270 M255 154H270 M255 175H270 M255 196H270 M255 217H270 M255 238H270 M255 259H270 M255 280H270 M255 301H270 M255 322H270 M255 343H270 M255 364H270 M255 385H270 M255 406H270 M255 427H270 M255 448H270 M255 469H270 M255 490H270" stroke-width="8"/>
+            <path d="M450 91H465 M450 112H465 M450 133H465 M450 154H465 M450 175H465 M450 196H465 M450 217H465 M450 238H465 M450 259H465 M450 280H465 M450 301H465 M450 322H465 M450 343H465 M450 364H465 M450 385H465 M450 406H465 M450 427H465 M450 448H465 M450 469H465 M450 490H465" stroke-width="8"/>
+          </g>
+          <text class="minor" x="222" y="96">1</text><text class="minor" x="504" y="91">40 / VBUS / unused</text>
+          <path class="wire" stroke="#b32f3b" d="M460 112H494"/><circle cx="460" cy="112" r="5" fill="#b32f3b"/>
+          <text class="label" x="504" y="117">39 / VSYS / power in</text>
+          <path class="wire" stroke="#32383c" d="M460 133H494"/><circle cx="460" cy="133" r="5" fill="#32383c"/>
+          <text x="504" y="140">38 / GND / USB-C return</text>
+          <path class="wire" stroke="#a82758" d="M460 175H494"/><circle cx="460" cy="175" r="5" fill="#a82758"/>
+          <text class="label" x="504" y="172">36 / 3V3(OUT)</text><text class="minor" x="504" y="194">Tach pull-up</text>
+          <path class="wire" stroke="#167343" d="M120 427H260"/><circle cx="260" cy="427" r="5" fill="#167343"/>
+          <text class="label" x="28" y="398">17 / GP13</text><text class="minor" x="28" y="418">Green / RPM</text>
+          <path class="wire" stroke="#32383c" d="M120 448H260"/><circle cx="260" cy="448" r="5" fill="#32383c"/>
+          <text x="28" y="456">18 / GND</text>
+          <text class="minor" x="145" y="474">19 / GP14</text>
+          <path class="wire" stroke="#1965ba" d="M120 490H260"/><circle cx="260" cy="490" r="5" fill="#1965ba"/>
+          <text class="label" x="28" y="518">20 / GP15</text><text class="minor" x="28" y="539">Blue / PWM</text>
+          <text class="minor" x="480" y="495">21</text>
+          <text class="minor" x="360" y="570" text-anchor="middle">Pin locator only. Not to scale; unused pins omitted from labels.</text>
+        </svg>
+      </div>
+      <figcaption>Figure 3. Physical numbering checked against the <a href="https://datasheets.raspberrypi.com/picow/PicoW-A4-Pinout.pdf">official Raspberry Pi Pico W pinout</a>. Power enters VSYS / pin 39 through the added diode. USB test pads are on the underside and are not drawn in this component-side locator.</figcaption>
+    </figure>
+    <div class="note"><p><strong>Earlier wiring correction:</strong> tach feedback now uses <code>GP13</code>, not the old <code>GP14</code> assignment. CircuitPython pulse counting uses a separate PWM slice from GP15; keep GP12/GP13 free of other PWM uses.</p></div>
+  </section>
+
+  <section id="tach">
+    <div class="section-number">04 / RPM measurement circuit</div>
+    <h2>RPM feedback and PWM are different wires</h2>
+    <figure>
+      <div class="diagram compact" tabindex="0" aria-label="Scrollable tachometer pull-up and filter circuit">
+        <svg viewBox="0 0 720 370" role="img" aria-labelledby="tach-title tach-desc">
+          <title id="tach-title">Tachometer pull-up and noise filter</title>
+          <desc id="tach-desc">Pico 3.3 volt output physical pin 36 connects through a one kilohm resistor to the shared node between fan pin 3 green tach and Pico GP13 physical pin 17. A one microfarad non-polarized capacitor connects from that shared node to ground. No connection to 5 or 12 volts.</desc>
+          <text class="label" x="360" y="35" text-anchor="middle">Pico 3V3(OUT) / pin 36</text>
+          <path class="wire" stroke="#a82758" d="M360 48V79 M360 137V204"/>
+          <rect x="350" y="79" width="20" height="58" fill="#fff" stroke="#a82758" stroke-width="2"/>
+          <text x="391" y="105">1 k&#8486; pull-up</text><text class="minor" x="391" y="126">3.3 V only</text>
+          <path class="wire" stroke="#167343" d="M75 204H645"/><circle cx="360" cy="204" r="5" fill="#167343"/>
+          <text class="label" x="28" y="182">Fan pin 3 / green</text><text class="label" x="485" y="182">GP13 / Pico pin 17</text>
+          <path class="wire" stroke="#167343" d="M260 204V238"/>
+          <path class="wire" stroke="#32383c" d="M232 238H288 M232 250H288 M260 250V306"/>
+          <path class="wire" stroke="#32383c" d="M232 306H288 M240 315H280 M249 324H271"/>
+          <text x="300" y="246">1 &#181;F non-polarized</text><text class="minor" x="300" y="267">Noise filter to GND</text>
+          <text class="minor" x="360" y="354" text-anchor="middle">Common ground remains connected as in Figure 1. Never pull the signal up to 5 V or 12 V.</text>
+        </svg>
+      </div>
+      <figcaption>Figure 4. A strong 3.3 V pull-up and capacitor produce a cleaner tach signal; neither component connects to the blue PWM wire.</figcaption>
+    </figure>
+    <div class="columns">
+      <div><h3>Green: measured rotation</h3><p>The fan's open-collector tach output gives two pulses per revolution. Pull it up only to the Pico's 3.3 V rail. At 50 pulses/second, measured speed is 1,500 RPM. Noctua currently recommends an external 1 k&#8486; pull-up and a 1 &#181;F non-polarized capacitor to ground when noise affects RPM readings. <a href="https://www.noctua.at/en/support/faqs/microcontroller-guide-pwm-setup-and-rpm-monitoring">Noctua RPM guidance</a>.</p><p>The firmware always attempts to count GP13 falling edges. Missing feedback cannot distinguish a stopped fan, missing motor power, an open tach wire, or a bad pull-up/ground connection.</p></div>
+      <div><h3>Blue: requested speed</h3><p>The current firmware outputs direct 3.3 V, 25 kHz PWM. No external pull-up or inverting transistor is part of this design. Noctua recommends push-pull drive; do not substitute a generic open-collector circuit without reviewing the interface. <a href="https://cdn.noctua.at/media/Noctua_PWM_specifications_white_paper.pdf">PWM drive specification</a>.</p><p>Control the blue signal, not the yellow motor supply. PWM percentage is not an exact RPM target; the current code does not perform closed-loop RPM regulation.</p></div>
+    </div>
+  </section>
+
+  <section id="checks">
+    <div class="section-number">05 / Commissioning</div>
+    <h2>First power-up checklist</h2>
+    <ol class="checks">
+      <li><strong>Unplug all power.</strong> Confirm the fan label says NF-A14 PWM, 12 V. Check connector numbering, secure terminals and insulate exposed conductors.</li>
+      <li><strong>Verify the power wiring.</strong> Confirm USB-C V is 5 V before connecting the Pico. With power off, check diode polarity, ground continuity and no accidental connection from boost OUT+ to a Pico rail. Do not use continuity mode on a powered circuit.</li>
+      <li><strong>Test the converter separately.</strong> Keep fan and Pico disconnected. Power the converter and measure a regulated +12 V between OUT+ and OUT-. Check polarity; disconnect power again before assembly.</li>
+      <li><strong>Connect the completed circuit.</strong> Start with the fan branch disabled. Power the Pico through VSYS from the verified USB-C 5 V branch and let the application boot, then enable the fan branch. Keep fingers, leads and tools clear.</li>
+      <li><strong>Check under load.</strong> Verify 12 V remains stable at the fan and there are no Pico resets, overheated parts or loose connections. If anything is abnormal, remove power.</li>
+      <li><strong>Test speed control.</strong> Use the existing dashboard to request full speed, a middle duty and off. Allow for the startup boost. A command timeout can restore full speed; this is not necessarily a wiring fault.</li>
+      <li><strong>Check RPM.</strong> Compare the reported RPM at full and middle speed. If it remains zero, verify the shared ground, green wire, 1 k&#8486; pull-up, and 1 &#181;F filter; do not assume a PWM display proves physical rotation.</li>
+    </ol>
+    <div class="note"><p><strong>What to expect:</strong> the standard NF-A14 PWM is specified for 0 RPM at 0% PWM and up to 1,500 RPM at full speed without the Low-Noise Adaptor. <strong>Off is a speed command, not electrical isolation:</strong> the yellow wire still carries 12 V. <a href="https://www.noctua.at/en/products/nf-a14-pwm/specifications">Model specifications</a>.</p></div>
+    <h3>Quick diagnosis</h3>
+    <div class="table-scroll"><table>
+      <thead><tr><th>Observation</th><th>Check first</th></tr></thead>
+      <tbody>
+        <tr><td>Always runs at full speed</td><td>Blue wire on GP15 / pin 20, shared ground, active command and timeout state. An unconnected PWM input defaults to full speed.</td></tr>
+        <tr><td>No RPM, but the fan spins</td><td>Green on GP13 / pin 17, common ground, 1 k&#8486; pull-up to 3.3 V, 1 &#181;F capacitor to ground, and connection continuity. RPM wiring does not supply the motor.</td></tr>
+        <tr><td>Pico resets when fan starts</td><td>USB current budget, converter startup draw, cable losses and loose power connections. Do not compensate by feeding 12 V into the Pico.</td></tr>
+        <tr><td>Fan does not run</td><td>Measured 12 V and polarity at the fan, physical obstruction and requested duty. Power down before correcting wiring.</td></tr>
+      </tbody>
+    </table></div>
+    <p class="small">Electrical behaviour reference: <a href="https://www.noctua.at/en/support/faqs/microcontroller-guide-pwm-setup-and-rpm-monitoring">Noctua troubleshooting guide</a>.</p>
+  </section>
+
+  <section id="software">
+    <div class="section-number">06 / Hardware vs. software status</div>
+    <h2>What works now, what comes next</h2>
+    <p><strong>Now:</strong> Wi-Fi dashboard, PWM commands and automatic tach counting on GP13. The USB-C V branch supplies Pico power through VSYS. A working USB data connection also provides a filesystem connection and a debug console; V and GND alone do not. The firmware starts at full PWM and normally returns to full PWM after its command timeout.</p>
+    <p><strong>DGX integration:</strong> the included Linux service reads CPU/GPU temperature and renews automatic fan commands over Wi-Fi. A USB cable alone does not provide temperature-based control; there is no USB serial command protocol.</p>
+    <p><strong>Before unattended use:</strong> validate the actual boost/USB hardware, power sequencing and thermal behaviour. The existing software fallback does not guarantee cooling through loss of power, a reset or a frozen processor.</p>
+  </section>
+  <footer>Reference wiring for this experimental repository, not a certified schematic. Diagrams are original illustrations based on linked manufacturer references and current project code. The USB-C breakout is identified as JRC-B008 from prototype source material; its actual CC wiring, the converter model and every physical assembly must be confirmed by the builder.</footer>
+</main>
+</body>
+</html>

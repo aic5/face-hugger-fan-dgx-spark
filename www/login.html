@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>DGX Spark | Sign in</title>
+  <link rel="stylesheet" href="/dashboard.css?v=4">
+  <script src="/login.js?v=2" defer></script>
+</head>
+<body class="login-page">
+  <main class="login-main">
+    <section class="login-card" aria-labelledby="login-title">
+      <div class="brand-mark" aria-hidden="true">DGX</div>
+      <div><h1 id="login-title">Fan controller</h1><p>Sign in to view and control external cooling.</p></div>
+      <form id="login-form">
+        <label for="username">Username</label>
+        <input id="username" name="username" type="text" autocomplete="username" required autofocus>
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+        <button id="login-submit" class="primary" type="submit">Sign in</button>
+      </form>
+      <p id="login-message" role="status" aria-live="polite"></p>
+    </section>
+  </main>
+</body>
+</html>
